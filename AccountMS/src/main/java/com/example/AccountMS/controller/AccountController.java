@@ -22,15 +22,28 @@ public class AccountController {
     RestTemplate restTemplate;
 
     @PostMapping("/addAccount")
-    public ResponseEntity<?> addAccount(@RequestBody Account account) {
+    public ResponseEntity<Object> addAccount(@RequestBody Account account) {
         String msg = "This method is used to create a account for particular customer and " +
-                     "without customer id we cannot create a account";
+                "without customer id we cannot create a account and" +
+                "We create a account only for existing customer";
         createFile(msg);
         if (account.getCustomerId() == 0) //Each account should have a customer id
         {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("customer id is required");
-        } else
-            return ResponseEntity.ok(repository.save(account));
+            return ResponseEntity.badRequest().body("customer id is required.");
+        } else {
+            //check given customer id is present in customerMS
+            HttpHeaders headers = new HttpHeaders();
+            headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+            HttpEntity<String> entity = new HttpEntity<String>(headers);
+            String customer = restTemplate.exchange("http://localhost:9293/template/customerById/" + account.getCustomerId(), HttpMethod.GET, entity, String.class).getBody();
+            if (customer.equals("yes")) {//if customer id is present in customerMS,adding account in AccountMS
+                service.saveAccount(account);
+                repository.save(account);
+                return ResponseEntity.ok(account);
+            } else {//if customer id is not exist in customerMS,not allowing to add account in AccountMS
+                return ResponseEntity.badRequest().body("Customer ID does not exist.");
+            }
+        }
     }
 
     @PostMapping("/addAccounts")
@@ -54,6 +67,13 @@ public class AccountController {
         return service.getAccountById(accountNumber);
     }
 
+    @GetMapping("/accountByCustomerId/{customerId}")
+    public List<Account> findByCustomerId(@PathVariable int customerId) {
+        String msg = "This method is used to get the accounts of particular customer id";
+        createFile(msg);
+        return service.getAccountByCustomerId(customerId);
+    }
+
     @DeleteMapping("/delete/{accountNumber}")
     public String deleteAccount(@PathVariable int accountNumber) {
         String msg = "This method is used to delete the account by accountNumber";
@@ -63,7 +83,7 @@ public class AccountController {
 
     @DeleteMapping("/deleteByCustomerId/{customerId}")
     public String deleteAccountByCustomerId(@PathVariable int customerId) {
-        String msg = "This method is used to get the account by customer id";
+        String msg = "This method is used to delete the account by customer id";
         createFile(msg);
         service.deleteAccountsByCustomerId(customerId);
         return ("Account deleted for customer id  " + customerId);
@@ -82,6 +102,7 @@ public class AccountController {
         createFile(msg);
         return service.updateAccount(account);
     }
+
     @RequestMapping("/template/customers")
     public String getCustomers() {
         HttpHeaders headers = new HttpHeaders();
@@ -91,6 +112,7 @@ public class AccountController {
         createFile(msg);
         return restTemplate.exchange("http://localhost:9293/customers", HttpMethod.GET, entity, String.class).getBody();
     }
+
     private void createFile(String msg) {
         {
             try {

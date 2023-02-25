@@ -12,11 +12,17 @@ import java.util.List;
 public class AccountServices {
     @Autowired
     private AccountRepository repository;
+    public Account saveAccount(Account account) {
+        return repository.save(account);
+    }
     public List<Account> saveAccounts(List<Account> accounts) {
         return repository.saveAll(accounts);
     }
     public Account getAccountById(int accountNumber) {
         return repository.findById(accountNumber).orElse(null);
+    }
+    public List<Account> getAccountByCustomerId(int customerId) {
+        return repository.findByCustomerId(customerId);
     }
     public List<Account> getAccounts() {
         return repository.findAll();
@@ -24,7 +30,7 @@ public class AccountServices {
 
     public String deleteAccount(int accountNumber){
         repository.deleteById(accountNumber);
-        return("Account removed   "+accountNumber);
+        return("Account removed for Account No:  "+accountNumber);
     }
     @Transactional
     public void deleteAccountsByCustomerId(int customerId) {
@@ -34,7 +40,7 @@ public class AccountServices {
     public String getBalanceById(int accountNumber)
     {
         Account account=repository.findById(accountNumber).orElse(null);
-        return("Balance Amount is :"+ account.getAccountBalance());
+        return("Balance Amount for AccountNo  "+ accountNumber+" is:  " +account.getAccountBalance());
     }
     public Account updateAccount(Account account)
     {
