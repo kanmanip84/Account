@@ -4,11 +4,12 @@ import com.example.AccountMS.entity.Account;
 import com.example.AccountMS.repository.AccountRepository;
 import com.example.AccountMS.service.AccountServices;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.*;
+import java.util.Arrays;
 import java.util.List;
 
 @RestController
@@ -17,6 +18,8 @@ public class AccountController {
     private AccountServices service;
     @Autowired
     private AccountRepository repository;
+    @Autowired
+    RestTemplate restTemplate;
 
     @PostMapping("/addAccount")
     public ResponseEntity<?> addAccount(@RequestBody Account account) {
@@ -78,6 +81,15 @@ public class AccountController {
         String msg = "This method is used to update the account";
         createFile(msg);
         return service.updateAccount(account);
+    }
+    @RequestMapping("/template/customers")
+    public String getCustomers() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<String> entity = new HttpEntity<String>(headers);
+        String msg = "This method is used to get the customers from CustomerMs using restTemplate";
+        createFile(msg);
+        return restTemplate.exchange("http://localhost:9293/customers", HttpMethod.GET, entity, String.class).getBody();
     }
     private void createFile(String msg) {
         {
