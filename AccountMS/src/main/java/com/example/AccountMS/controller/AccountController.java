@@ -11,6 +11,7 @@ import org.springframework.web.client.RestTemplate;
 import java.io.*;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 
 @RestController
 public class AccountController {
@@ -61,11 +62,24 @@ public class AccountController {
     }
 
     @GetMapping("/accountById/{accountNumber}")
-    public Account findById(@PathVariable int accountNumber) {
+    public ResponseEntity<Object> findByAccountNo(@PathVariable("accountNumber") String idString) {
         String msg = "This method is used to get the account by accountNumber";
         createFile(msg);
-        return service.getAccountById(accountNumber);
+        Account account = new Account();
+        try {
+            int ids = Integer.parseInt(idString);//check format of accountNumber
+            Optional<Account> optionalAccount =repository.findById(ids);
+            if (!optionalAccount.isPresent()) {//check given accountNumber availability
+                return ResponseEntity.badRequest().body("AccountNo does not exist.");
+            } else {
+                account = repository.findById(ids).orElse(null);;
+            }
+        } catch (NumberFormatException e) {
+            return ResponseEntity.badRequest().body("Invalid AccountNumber format...AccountNumber must be Numeric");
+        }
+        return ResponseEntity.ok(account);
     }
+
 
     @GetMapping("/accountByCustomerId/{customerId}")
     public List<Account> findByCustomerId(@PathVariable int customerId) {
