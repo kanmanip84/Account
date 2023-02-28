@@ -84,7 +84,6 @@ public class AccountController {
         return ResponseEntity.ok(account);
     }
 
-
     @GetMapping("/accountByCustomerId/{customerId}")
     public List<Account> findByCustomerId(@PathVariable int customerId) {
         String msg = "This method is used to get the accounts of particular customer id";
@@ -107,7 +106,7 @@ public class AccountController {
         return ("Account deleted for customer id  " + customerId);
     }
 
-  /*  @GetMapping("/balance/{accountNumber}")
+    @GetMapping("/balance/{accountNumber}")
     public String getBalance(@PathVariable int accountNumber) {
         String msg = "This method is used to get the balance by accountNumber";
         createFile(msg);
@@ -115,11 +114,22 @@ public class AccountController {
     }
 
     @PutMapping("/update")
-    public Account updateAccount(@RequestBody Account account) {
-        String msg = "This method is used to update the account";
+    public ResponseEntity<?> updateCustomer(@Valid @RequestBody Account account, BindingResult result){
+        String msg = "This method is used to Update the existing customer" +
+                     "Before updating the customer it will Validate the request body " +
+                     "If captured any input validation errors,send a response with the error messages in the response body";
         createFile(msg);
-        return service.updateAccount(account);
-    }*/
+        if (result.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            List<FieldError> fieldErrors = result.getFieldErrors();
+            for (FieldError fieldError : fieldErrors) {
+                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
+            }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        }
+        Account updatedAccount =service.updateAccount(account);
+        return ResponseEntity.ok(updatedAccount);
+    }
 
     @RequestMapping("/template/customers")
     public String getCustomers() {
