@@ -5,13 +5,15 @@ import com.example.AccountMS.repository.AccountRepository;
 import com.example.AccountMS.service.AccountServices;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
+import org.springframework.validation.BindingResult;
+import org.springframework.validation.FieldError;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.client.RestTemplate;
 
+import javax.validation.Valid;
 import java.io.*;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.lang.Integer;
 
 @RestController
 public class AccountController {
@@ -23,27 +25,29 @@ public class AccountController {
     RestTemplate restTemplate;
 
     @PostMapping("/addAccount")
-    public ResponseEntity<Object> addAccount(@RequestBody Account account) {
-        String msg = "This method is used to create a account for particular customer and " +
-                "without customer id we cannot create a account and" +
-                "We create a account only for existing customer";
+    public ResponseEntity<Object> addAccount(@Valid @RequestBody Account account,BindingResult result) {
+        String msg = "This method is used to create a account for particular customer and added validation constraints and" +
+                     " if captured any input validation errors,send a response with the error messages in the response body and" +
+                     " We create a account only for existing customer";
         createFile(msg);
-        if (account.getCustomerId() == 0) //Each account should have a customer id
-        {
-            return ResponseEntity.badRequest().body("customer id is required.");
-        } else {
-            //check given customer id is present in customerMS
-            HttpHeaders headers = new HttpHeaders();
-            headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
-            HttpEntity<String> entity = new HttpEntity<String>(headers);
-            String customer = restTemplate.exchange("http://localhost:9293/template/customerById/" + account.getCustomerId(), HttpMethod.GET, entity, String.class).getBody();
-            if (customer.equals("yes")) {//if customer id is present in customerMS,adding account in AccountMS
-                service.saveAccount(account);
-                repository.save(account);
-                return ResponseEntity.ok(account);
-            } else {//if customer id is not exist in customerMS,not allowing to add account in AccountMS
-                return ResponseEntity.badRequest().body("Customer ID does not exist.");
+        if (result.hasErrors()) {
+            Map<String, String> errors = new HashMap<>();
+            List<FieldError> fieldErrors = result.getFieldErrors();
+            for (FieldError fieldError : fieldErrors) {
+                errors.put(fieldError.getField(), fieldError.getDefaultMessage());
             }
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errors);
+        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.setAccept(Arrays.asList(MediaType.APPLICATION_JSON));
+        HttpEntity<String> entity = new HttpEntity<String>(headers);
+        String customer = restTemplate.exchange("http://localhost:9293/template/customerById/" + account.getCustomerId(), HttpMethod.GET, entity, String.class).getBody();
+        if (customer.equals("yes")) {//if customer id is present in customerMS,adding account in AccountMS
+            service.saveAccount(account);
+            repository.save(account);
+            return ResponseEntity.ok(account);
+        } else {//if customer id does not exist in customerMS,not allowing to add account in AccountMS
+            return ResponseEntity.badRequest().body("Customer ID does not exist.");
         }
     }
 
@@ -72,7 +76,7 @@ public class AccountController {
             if (!optionalAccount.isPresent()) {//check given accountNumber availability
                 return ResponseEntity.badRequest().body("AccountNo does not exist.");
             } else {
-                account = repository.findById(ids).orElse(null);;
+                account = repository.findById(ids).orElse(null);
             }
         } catch (NumberFormatException e) {
             return ResponseEntity.badRequest().body("Invalid AccountNumber format...AccountNumber must be Numeric");
@@ -103,7 +107,7 @@ public class AccountController {
         return ("Account deleted for customer id  " + customerId);
     }
 
-    @GetMapping("/balance/{accountNumber}")
+  /*  @GetMapping("/balance/{accountNumber}")
     public String getBalance(@PathVariable int accountNumber) {
         String msg = "This method is used to get the balance by accountNumber";
         createFile(msg);
@@ -115,7 +119,7 @@ public class AccountController {
         String msg = "This method is used to update the account";
         createFile(msg);
         return service.updateAccount(account);
-    }
+    }*/
 
     @RequestMapping("/template/customers")
     public String getCustomers() {

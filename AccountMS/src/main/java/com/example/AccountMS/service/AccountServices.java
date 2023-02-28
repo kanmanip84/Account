@@ -37,12 +37,12 @@ public class AccountServices {
         List<Account> accounts = repository.findByCustomerId(customerId);
         repository.deleteAll(accounts);
     }
-    public String getBalanceById(int accountNumber)
+   /* public String getBalanceById(int accountNumber)
     {
         Account account=repository.findById(accountNumber).orElse(null);
         return("Balance Amount for AccountNo  "+ accountNumber+" is:  " +account.getAccountBalance());
     }
-    public Account updateAccount(Account account)
+   /* public Account updateAccount(Account account)
     {
         Account existingAccount=repository.findById(account.getAccountNumber()).orElse(null);
         existingAccount.setAccountType(account.getAccountType());
@@ -52,5 +52,5 @@ public class AccountServices {
         existingAccount.setStatus(account.getStatus());
         existingAccount.setInterest(account.getInterest());
         return repository.save(existingAccount);
-    }
+    }*/
 }
